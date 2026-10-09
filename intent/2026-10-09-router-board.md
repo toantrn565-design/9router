@@ -1,5 +1,5 @@
 ---
-status: verified
+status: shipped (PR #1)
 ---
 # Router Board: windows and models
 
