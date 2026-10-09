@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Router Board</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><div><p class="eyebrow">JAVIS · 9ROUTER</p><h1>Cửa sổ làm việc</h1><p>Mỗi cửa sổ một model, một cổng kết nối riêng.</p></div><a id="router-link" target="_blank" rel="noreferrer">Quản lý tài khoản ↗</a></header>
+    <section class="toolbar" aria-label="Tạo cửa sổ">
+      <div><h2>Thêm cửa sổ</h2><p>Tối đa 12 cửa sổ. Tài khoản được router phân phối theo cấu hình Providers.</p></div>
+      <form id="add-form">
+        <label>Tên cửa sổ<input name="name" required maxlength="80" placeholder="Ví dụ: Viết code"></label>
+        <label>Model<select name="model" id="new-model" required></select></label>
+        <label class="folder">Thư mục làm việc<input name="folder" required placeholder="C:\Projects\Javis"></label>
+        <button id="add-button" type="submit">＋ Thêm cửa sổ</button>
+      </form>
+      <button id="refresh-models" class="secondary" type="button">Cập nhật danh sách model</button>
+    </section>
+    <p id="message" role="status" aria-live="polite"></p>
+    <div class="section-title"><h2>Các cửa sổ của anh</h2><span id="count"></span></div>
+    <section id="windows" class="windows" aria-label="Danh sách cửa sổ"></section>
+    <p id="empty">Chưa có cửa sổ. Kết nối tài khoản trong 9Router, rồi chọn model để thêm cửa sổ đầu tiên.</p>
+    <footer>Chọn model trước khi mở. Muốn đổi model hoặc xóa, hãy đóng cửa sổ và đợi yêu cầu đang chạy hoàn tất. Cấu hình được lưu tự động.</footer>
+  </main>
+</body>
+</html>

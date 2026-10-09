@@ -1,5 +1,5 @@
 ---
-status: planned
+status: building
 ---
 # Router Board: windows and models
 

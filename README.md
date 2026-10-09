@@ -23,6 +23,10 @@
 
 ---
 
+## Windows Router Board
+
+Run `setup-router-board.cmd` once, then use the **Javis Router Board** desktop shortcut to add/remove up to 12 saved windows, select each model, and open/close Codex sessions. Each window has its own local API port; all share one 9Router and its connected accounts. See [Vietnamese setup and usage](ROUTER-BOARD.vi.md).
+
 ## 🤔 Why 9Router?
 
 **Stop wasting money, tokens and hitting limits:**
