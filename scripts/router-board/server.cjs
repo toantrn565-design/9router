@@ -5,7 +5,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
 const crypto = require("node:crypto");
-const { spawn, execFile } = require("node:child_process");
+const { execFile } = require("node:child_process");
+const { EventEmitter } = require("node:events");
 const { promisify } = require("node:util");
 
 const MAX_WINDOWS = 12;
@@ -56,25 +57,48 @@ function filteredHeaders(headers) {
   return Object.fromEntries(Object.entries(headers).filter(([name]) => !blocked.has(name) && !["set-cookie", "cookie", "authorization"].includes(name)));
 }
 
+async function windowsWindowAction(action, args, apiKey) {
+  const shell = path.join(process.env.SystemRoot || "C:\\Windows", "System32/WindowsPowerShell/v1.0/powershell.exe");
+  const script = path.resolve(__dirname, "../windows/Invoke-CodexWindow.ps1");
+  const { stdout } = await promisify(execFile)(shell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+    "-File", script, "-Action", action, ...args], {
+    windowsHide: true, timeout: 15000,
+    env: { ...process.env, ...(apiKey ? { JAVIS_ROUTER_API_KEY: apiKey } : {}) },
+  });
+  return JSON.parse(stdout.trim());
+}
+
 async function launchWindowsPane(pane, baseUrl, apiKey) {
   if (process.platform !== "win32") throw problem(400, "Mo cua so Codex can Windows. Cong API van dung duoc.");
-  const script = path.resolve(__dirname, "../windows/Start-CodexPane.ps1");
   const cliModel = pane.model.replace(/^(cx|codex)\//, "");
-  const shell = path.join(process.env.SystemRoot || "C:\\Windows", "System32/WindowsPowerShell/v1.0/powershell.exe");
-  const child = spawn(shell, ["-NoLogo", "-NoProfile", "-NoExit", "-ExecutionPolicy", "Bypass", "-File", script,
-    "-Model", cliModel, "-BaseUrl", baseUrl, "-Folder", pane.folder], {
-    cwd: pane.folder, detached: true, windowsHide: false, stdio: "ignore",
-    env: { ...process.env, JAVIS_ROUTER_API_KEY: apiKey },
-  });
-  await new Promise((resolve, reject) => { child.once("spawn", resolve); child.once("error", reject); });
-  child.unref();
+  // Start-Process creates a real interactive console; detached Node stdio:'ignore'
+  // instead gives PowerShell NUL handles on Windows (nodejs/node#51018).
+  const owner = await windowsWindowAction("Open", ["-Model", cliModel, "-BaseUrl", baseUrl, "-Folder", pane.folder], apiKey);
+  if (!Number.isInteger(owner.pid) || owner.pid <= 0 || !/^\d+$/.test(owner.started)) throw new Error("Invalid window ownership");
+  const child = new EventEmitter();
+  Object.assign(child, { pid: owner.pid, started: owner.started, exitCode: null, signalCode: null });
+  let checking = false;
+  const timer = setInterval(async () => {
+    if (checking) return;
+    checking = true;
+    try {
+      const result = await windowsWindowAction("Check", ["-ProcessId", String(child.pid), "-StartedTicks", child.started]);
+      if (!result.running) { clearInterval(timer); child.exitCode = 0; child.emit("exit", 0); }
+    } catch { /* Keep ownership on transient check failure; do not unlock an active window. */ }
+    finally { checking = false; }
+  }, 2000);
+  timer.unref();
+  child.stopWatching = () => clearInterval(timer);
   return child;
 }
 
 async function closeWindowsPane(child) {
   if (child.exitCode !== null || child.signalCode) return;
-  // Only the shell started by this board and its children are targeted.
-  await promisify(execFile)("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true });
+  // Verify PID AND creation time before targeting the owned shell's process tree.
+  await windowsWindowAction("Close", ["-ProcessId", String(child.pid), "-StartedTicks", child.started]);
+  child.stopWatching();
+  child.exitCode = 0;
+  child.emit("exit", 0);
 }
 
 function createBoard(options = {}) {
@@ -342,6 +366,7 @@ function createBoard(options = {}) {
     async stop() {
       stopping = true;
       await queue;
+      for (const child of children.values()) child.stopWatching?.();
       for (const gateway of gateways.values()) for (const request of gateway.pending) request.destroy();
       await Promise.all([stopServer(server), ...[...gateways.values()].map(g => stopServer(g.server))]);
       gateways.clear();
