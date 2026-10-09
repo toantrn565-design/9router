@@ -1,5 +1,5 @@
 ---
-status: building
+status: verified
 ---
 # Router Board: windows and models
 

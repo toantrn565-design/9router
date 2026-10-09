@@ -27,3 +27,13 @@ Approved by the owner's direct requests to preconfigure multiport mode and code 
 - Existing provider regression subset for account fallback, combo routing, Codex normalization/base URL/profiles/model routing. Exclude two previously identified baseline expectation failures from pass claims.
 - Independent reviewer receives intent + plan and final diff; resolve findings before shipping.
 - Git diff whitespace check; GitHub feature branch → PR → merge with checked head SHA. Final instructions explain running setup locally and connecting accounts through the dashboard.
+
+## Verification results
+
+- `npm run test:board`: 10/10 passed, including two simultaneous pinned-model ports, SSE cancellation, Windows process-adapter lifecycle, 12-window limit, CSRF/Host protection, persistence and startup rollback.
+- Relevant existing Vitest subset: 6 files / 42 tests passed (account-fallback-4xx, combo-routing, codex-tool-normalization, codex-current-provider-base-url, codex-profiles, codex-registry-model-routing).
+- `npm run build`: passed; production pages and standalone assets generated.
+- JavaScript syntax and `git diff --check`: passed.
+- Independent reviewer: no remaining blockers after correcting initial password persistence, external-router data ownership, saved model type validation and native interactive console launch. Reviewer also exercised a truncated-upstream SSE probe; active counters were released.
+- Windows startup uses the documented PowerShell 5.1 Start-Process behavior: new window, inherited environment, PassThru process object. No Windows runtime is available here, so interactive Codex TUI, shortcut and DPAPI still require the documented desktop smoke test. No real ChatGPT accounts or credentials were used in tests.
+- The earlier full Codex-focused review found two baseline expectation failures (refresh lead and model context size) outside this change; this is not a claim that the entire upstream suite passes.

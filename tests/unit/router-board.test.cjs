@@ -203,5 +203,9 @@ test('corrupt persisted data fails without overwriting it; startup conflict rele
   fs.writeFileSync(f.config.stateFile, 'bad json');
   await assert.rejects(createBoard(f.config).start(), /board.json/);
   assert.equal(fs.readFileSync(f.config.stateFile, 'utf8'), 'bad json');
+  const wrongType = JSON.parse(original);
+  wrongType.panes[0].model = 123;
+  fs.writeFileSync(f.config.stateFile, JSON.stringify(wrongType));
+  await assert.rejects(createBoard(f.config).start(), /board.json/);
   fs.writeFileSync(f.config.stateFile, original);
 });
