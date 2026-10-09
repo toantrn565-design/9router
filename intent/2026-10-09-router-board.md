@@ -1,5 +1,5 @@
 ---
-status: approved
+status: planned
 ---
 # Router Board: windows and models
 
